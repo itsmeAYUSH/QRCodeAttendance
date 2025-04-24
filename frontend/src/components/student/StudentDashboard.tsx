@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useInterval } from "../../hooks/useInterval";
 import {
   Container,
   Box,
@@ -82,7 +81,7 @@ const StudentDashboard: React.FC = () => {
     
     try {
       setLoading(true);
-      const response = await axios.post(
+      await axios.post(
         'https://qrcodeattendance-y5k5.onrender.com/api/attendance/mark',
         { qrCode: decodedText },
         { headers: { Authorization: `Bearer ${token}` } }
