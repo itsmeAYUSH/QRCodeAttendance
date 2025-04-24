@@ -42,7 +42,7 @@ const StudentDashboard: React.FC = () => {
     setIsUpdating(true);
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/attendance/my-attendance",
+        "https://qrcodeattendance-y5k5.onrender.com/api/attendance/my-attendance",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -83,7 +83,7 @@ const StudentDashboard: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.post(
-        'http://localhost:5000/api/attendance/mark',
+        'https://qrcodeattendance-y5k5.onrender.com/api/attendance/mark',
         { qrCode: decodedText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

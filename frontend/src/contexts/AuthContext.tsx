@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
         // Fetch user profile
-        const response = await axios.get('http://localhost:5000/api/auth/profile');
+        const response = await axios.get('https://qrcodeattendance-y5k5.onrender.com/api/auth/profile');
         setUser(response.data);
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await axios.post('https://qrcodeattendance-y5k5.onrender.com/api/auth/login', {
         email,
         password,
       });
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (userData: RegisterData) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', userData);
+      const response = await axios.post('https://qrcodeattendance-y5k5.onrender.com/api/auth/register', userData);
       const { token: newToken, user: newUser } = response.data;
       localStorage.setItem('token', newToken);
       setToken(newToken);
