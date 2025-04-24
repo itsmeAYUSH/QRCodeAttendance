@@ -141,7 +141,7 @@ const FacultyDashboard: React.FC = () => {
     } finally {
       setIsUpdating(false);
     }
-  }, [reports, selectedReport]);
+  }, [reports, selectedReport,isUpdating]);
 
   // Initial fetch
   useEffect(() => {

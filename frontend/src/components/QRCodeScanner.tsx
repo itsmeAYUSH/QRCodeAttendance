@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import React, { useEffect, useRef, useCallback } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface QRCodeScannerProps {
   onScan: (data: string) => void;
@@ -8,78 +8,91 @@ interface QRCodeScannerProps {
 
 const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, onError }) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const qrScannerId = 'qr-reader';
+  const qrScannerId = "qr-reader";
+  const mountedRef = useRef(true);
+
+  // Memoize the callbacks with proper dependencies
+  const handleScan = useCallback(
+    (text: string) => {
+      if (mountedRef.current) {
+        onScan(text);
+      }
+    },
+    [onScan]
+  );
+
+  const handleError = useCallback(
+    (error: Error) => {
+      if (!mountedRef.current) return;
+      
+      const errorMessage = error.message || "Unknown error";
+      if (errorMessage.includes("NotAllowedError")) {
+        onError("Camera access denied. Please grant camera permissions.");
+      } else if (errorMessage.includes("NotFoundError")) {
+        onError("No camera found. Please ensure your device has a camera.");
+      } else {
+        onError(`Scanner error: ${errorMessage}`);
+      }
+    },
+    [onError]
+  );
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
+    let scannerInstance: Html5Qrcode | null = null;
 
-    const init = async () => {
+    const initScanner = async () => {
       try {
-        // Create scanner instance
-        scannerRef.current = new Html5Qrcode(qrScannerId);
+        scannerInstance = new Html5Qrcode(qrScannerId);
+        scannerRef.current = scannerInstance;
 
-        // Basic configuration
         const config = {
-          fps: 2, // Lower FPS for better stability
+          fps: 2,
           qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0
+          aspectRatio: 1.0,
         };
 
-        // Start scanning
-        await scannerRef.current.start(
-          { facingMode: 'environment' },
+        await scannerInstance.start(
+          { facingMode: "environment" },
           config,
-          (text) => {
-            if (mounted) onScan(text);
-          },
-          () => {} // Ignore interim errors
+          handleScan,
+          () => {} // Quiet console
         );
       } catch (err) {
-        if (!mounted) return;
-
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        if (errorMessage.includes('NotAllowedError')) {
-          onError('Camera access denied. Please grant camera permissions.');
-        } else if (errorMessage.includes('NotFoundError')) {
-          onError('No camera found. Please ensure your device has a camera.');
-        } else {
-          onError('Failed to start scanner. Please try again.');
-        }
+        handleError(err as Error);
       }
     };
 
-    // Add a delay before initialization
-    const timeoutId = setTimeout(init, 1000);
+    const timer = setTimeout(initScanner, 1000);
 
-    // Cleanup function
     return () => {
-      mounted = false;
-      clearTimeout(timeoutId);
+      mountedRef.current = false;
+      clearTimeout(timer);
 
-      // Ensure scanner is properly cleaned up
-      if (scannerRef.current) {
-        scannerRef.current.stop()
-          .then(() => {
-            if (scannerRef.current) {
-              return scannerRef.current.clear();
-            }
-          })
-          .catch(() => {})
-          .finally(() => {
-            scannerRef.current = null;
-          });
-      }
+      const cleanupScanner = async () => {
+        if (scannerInstance && scannerInstance.isScanning) {
+          try {
+            await scannerInstance.stop();
+            scannerInstance.clear();
+          } catch (err) {
+            console.debug("Scanner cleanup error:", err);
+          }
+        }
+        scannerRef.current = null;
+      };
+
+      cleanupScanner();
     };
-  }, []); // Only run once on mount
+  }, [handleScan, handleError]);
 
   return (
     <div
       id={qrScannerId}
       style={{
-        width: '100%',
-        height: '100%',
-        minHeight: '300px',
-        backgroundColor: '#000'
+        width: "100%",
+        height: "100%",
+        minHeight: "300px",
+        backgroundColor: "#000",
       }}
     />
   );
